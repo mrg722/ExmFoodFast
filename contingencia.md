@@ -182,7 +182,12 @@ No usar salvo reset total de base de datos:
 ```powershell
 docker compose down -v
 ```
-
+------
+Ejecutar toda la clase InventarioServiceTest
+.\mvnw.cmd "-Dtest=InventarioServiceTest" test
+-----
+Ejecutar un solo método del test
+.\mvnw.cmd "-Dtest=InventarioServiceTest#debeRechazarStockInsuficiente" test
 ---
 
 ## 6. Links que se deben mostrar en defensa
