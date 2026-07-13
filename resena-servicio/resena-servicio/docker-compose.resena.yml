@@ -1,0 +1,15 @@
+﻿services:
+  resena-servicio:
+    build: .
+    container_name: resena-servicio
+    ports:
+      - "8088:8088"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      DB_HOST: mysql-foodfast
+      DB_PORT: 3306
+      DB_NAME: resena_db
+      DB_USER: root
+      DB_PASSWORD: root
+      EUREKA_URL: http://eureka-server:8761/eureka/
+      JWT_SECRET: FoodFastClaveJWTUltraSegura2026ParaMicroserviciosConMasDe42Caracteres
