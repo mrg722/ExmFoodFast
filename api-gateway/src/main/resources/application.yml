@@ -1,0 +1,98 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      httpclient:
+        connect-timeout: 5000
+        response-timeout: 10s
+      # Perfil local por defecto.
+      # Entra al puerto 8080 y redirige a servicios corriendo en localhost.
+      routes:
+        - id: authentication-servicio
+          uri: http://localhost:8090
+          predicates:
+            - Path=/api/auth/**,/api/autenticacion/**
+
+        - id: catalogo-servicio
+          uri: http://localhost:8081
+          predicates:
+            - Path=/api/productos/**,/api/catalogo/**,/api/categorias/**,/api/categoria/**
+
+        - id: inventario-servicio
+          uri: http://localhost:8082
+          predicates:
+            - Path=/api/inventarios/**,/api/inventario/**,/api/stock/**
+
+        - id: pedido-servicio
+          uri: http://localhost:8083
+          predicates:
+            - Path=/api/pedidos/**,/api/pedido/**,/api/v1/pedidos/**,/api/v1/pedido/**
+
+        - id: reparto-servicio
+          uri: http://localhost:8084
+          predicates:
+            - Path=/api/repartos/**,/api/reparto/**,/api/entregas/**,/api/entrega/**,/api/repartidores/**,/api/repartidor/**
+
+        - id: cliente-servicio
+          uri: http://localhost:8085
+          predicates:
+            - Path=/api/clientes/**,/api/cliente/**
+
+        - id: pago-servicio
+          uri: http://localhost:8086
+          predicates:
+            - Path=/api/pagos/**,/api/pago/**
+
+        - id: restaurante-servicio
+          uri: http://localhost:8087
+          predicates:
+            - Path=/api/restaurantes/**,/api/restaurante/**,/api/horarios-restaurante/**,/api/horario-restaurante/**
+
+        - id: resena-servicio
+          uri: http://localhost:8088
+          predicates:
+            - Path=/api/resenas/**,/api/resena/**
+
+        - id: notificacion-servicio
+          uri: http://localhost:8089
+          predicates:
+            - Path=/api/notificaciones/**,/api/notificacion/**,/api/notifications/**,/api/notification/**
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URL:http://localhost:8761/eureka/}
+    register-with-eureka: true
+    fetch-registry: true
+  instance:
+    prefer-ip-address: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway
+  endpoint:
+    health:
+      show-details: always
+    gateway:
+      enabled: true
+  info:
+    env:
+      enabled: true
+
+info:
+  app:
+    name: api-gateway
+    description: Entrada unica de FoodFast EV3
+    port: 8080
+app:
+  security:
+    enabled: ${APP_SECURITY_ENABLED:true}
+
+jwt:
+  secret: ${JWT_SECRET:FoodFastDefinitivo2026Secret}

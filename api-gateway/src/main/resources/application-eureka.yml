@@ -1,0 +1,92 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      httpclient:
+        connect-timeout: 5000
+        response-timeout: 10s
+      # Perfil Eureka/Docker.
+      # Las URI lb:// deben coincidir con spring.application.name de cada microservicio.
+      routes:
+        - id: authentication-servicio
+          uri: lb://authentication-servicio
+          predicates:
+            - Path=/api/auth/**,/api/autenticacion/**
+
+        - id: catalogo-servicio
+          uri: lb://catalogo-servicio
+          predicates:
+            - Path=/api/productos/**,/api/catalogo/**,/api/categorias/**,/api/categoria/**
+
+        - id: inventario-servicio
+          uri: lb://inventario-servicio
+          predicates:
+            - Path=/api/inventarios/**,/api/inventario/**,/api/stock/**
+
+        - id: pedido-servicio
+          uri: lb://pedido-servicio
+          predicates:
+            - Path=/api/pedidos/**,/api/pedido/**,/api/v1/pedidos/**,/api/v1/pedido/**
+
+        - id: reparto-servicio
+          uri: lb://reparto-servicio
+          predicates:
+            - Path=/api/repartos/**,/api/reparto/**,/api/entregas/**,/api/entrega/**,/api/repartidores/**,/api/repartidor/**
+
+        - id: cliente-servicio
+          uri: lb://cliente-servicio
+          predicates:
+            - Path=/api/clientes/**,/api/cliente/**
+
+        - id: pago-servicio
+          uri: lb://pago-servicio
+          predicates:
+            - Path=/api/pagos/**,/api/pago/**
+
+        - id: restaurante-servicio
+          uri: lb://restaurante-servicio
+          predicates:
+            - Path=/api/restaurantes/**,/api/restaurante/**,/api/horarios-restaurante/**,/api/horario-restaurante/**
+
+        - id: resena-servicio
+          uri: lb://resena-servicio
+          predicates:
+            - Path=/api/resenas/**,/api/resena/**
+
+        - id: notificacion-servicio
+          uri: lb://notificacion-servicio
+          predicates:
+            - Path=/api/notificaciones/**,/api/notificacion/**,/api/notifications/**,/api/notification/**
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URL:http://localhost:8761/eureka/}
+    register-with-eureka: true
+    fetch-registry: true
+  instance:
+    prefer-ip-address: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway
+  endpoint:
+    health:
+      show-details: always
+    gateway:
+      enabled: true
+  info:
+    env:
+      enabled: true
+
+info:
+  app:
+    name: api-gateway
+    description: Entrada unica de FoodFast EV3 usando Eureka
+    port: 8080
