@@ -24,6 +24,33 @@ $env:Path = "$env:JAVA_HOME\bin;$env:Path"
 java -version
 .\mvnw.cmd -v
 
+Haz esto ahora
+Opción 1: por comando
+
+Ejecuta:
+
+docker desktop engine ls
+
+Después:
+
+docker desktop engine use linux
+
+Espera a que Docker Desktop reinicie completamente. Luego comprueba:
+
+docker context ls
+docker info --format "Sistema de contenedores: {{.OSType}}"
+
+Debe aparecer:
+
+desktop-linux *
+Sistema de contenedores: linux
+
+Recién entonces ejecuta:
+
+docker compose down --remove-orphans
+docker compose up --build -d
+docker compose ps
+
 ## 2. Verificar entorno del PC 
 
 ```powershell
