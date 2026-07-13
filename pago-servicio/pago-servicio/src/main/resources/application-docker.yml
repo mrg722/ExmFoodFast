@@ -1,0 +1,21 @@
+spring:
+  config:
+    activate:
+      on-profile: docker
+
+  datasource:
+    url: jdbc:mysql://${DB_HOST:pago-db}:${DB_PORT:3306}/${DB_NAME:pago_db}?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    username: ${DB_USER:root}
+    password: ${DB_PASSWORD:root}
+
+services:
+  pedido:
+    enabled: ${PEDIDO_INTEGRATION_ENABLED:false}
+    url: ${PEDIDO_SERVICE_URL:http://pedido-servicio:8083}
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URL:http://localhost:8761/eureka/}
+  instance:
+    prefer-ip-address: true

@@ -1,0 +1,15 @@
+﻿services:
+  notificacion-servicio:
+    build: .
+    container_name: notificacion-servicio
+    ports:
+      - "8089:8089"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      DB_HOST: mysql-foodfast
+      DB_PORT: 3306
+      DB_NAME: notificacion_db
+      DB_USER: root
+      DB_PASSWORD: root
+      EUREKA_URL: http://eureka-server:8761/eureka/
+      JWT_SECRET: FoodFastClaveJWTUltraSegura2026ParaMicroserviciosConMasDe42Caracteres
