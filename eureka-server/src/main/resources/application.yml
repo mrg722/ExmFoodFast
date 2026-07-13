@@ -1,0 +1,42 @@
+server:
+  port: 8761
+
+spring:
+  application:
+    name: eureka-server
+
+# Eureka Server no debe registrarse a si mismo como cliente.
+eureka:
+  client:
+    register-with-eureka: false
+    fetch-registry: false
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+  server:
+    # En evaluacion/local se desactiva para que el tablero cambie rapido.
+    # En produccion real normalmente se deja activo.
+    enable-self-preservation: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
+  info:
+    env:
+      enabled: true
+
+info:
+  app:
+    name: eureka-server
+    description: Registro central de microservicios FoodFast
+    port: 8761
+app:
+  security:
+    enabled: ${APP_SECURITY_ENABLED:true}
+
+jwt:
+  secret: ${JWT_SECRET:FoodFastDefinitivo2026Secret}
