@@ -1,0 +1,59 @@
+﻿services:
+  authentication-servicio:
+    environment:
+      SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: 3
+      SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: 1
+
+  catalogo-servicio:
+    environment:
+      JWT_SECRET: "FoodFast-EV3-JWT-Secret-2026-Martin-Reyes-Segura-256"
+      SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: 3
+      SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: 1
+
+  cliente-servicio:
+    environment:
+      JWT_SECRET: "FoodFast-EV3-JWT-Secret-2026-Martin-Reyes-Segura-256"
+      SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: 3
+      SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: 1
+
+  inventario-servicio:
+    environment:
+      JWT_SECRET: "FoodFast-EV3-JWT-Secret-2026-Martin-Reyes-Segura-256"
+      SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: 3
+      SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: 1
+
+  notificacion-servicio:
+    environment:
+      JWT_SECRET: "FoodFast-EV3-JWT-Secret-2026-Martin-Reyes-Segura-256"
+      SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: 3
+      SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: 1
+
+  pago-servicio:
+    environment:
+      JWT_SECRET: "FoodFast-EV3-JWT-Secret-2026-Martin-Reyes-Segura-256"
+      SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: 3
+      SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: 1
+
+  pedido-servicio:
+    environment:
+      JWT_SECRET: "FoodFast-EV3-JWT-Secret-2026-Martin-Reyes-Segura-256"
+      SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: 3
+      SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: 1
+
+  reparto-servicio:
+    environment:
+      JWT_SECRET: "FoodFast-EV3-JWT-Secret-2026-Martin-Reyes-Segura-256"
+      SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: 3
+      SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: 1
+
+  resena-servicio:
+    environment:
+      JWT_SECRET: "FoodFast-EV3-JWT-Secret-2026-Martin-Reyes-Segura-256"
+      SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: 3
+      SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: 1
+
+  restaurante-servicio:
+    environment:
+      JWT_SECRET: "FoodFast-EV3-JWT-Secret-2026-Martin-Reyes-Segura-256"
+      SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: 3
+      SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: 1

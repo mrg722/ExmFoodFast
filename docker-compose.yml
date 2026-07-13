@@ -1,0 +1,417 @@
+name: exmfoodfastfn
+
+x-common-java-env: &common-java-env
+  TZ: America/Santiago
+  JWT_SECRET: "Rm9vZEZhc3QtRVYzLUpXVC1TZWNyZXQtMjAyNi1NYXJ0aW4tUmV5ZXMtU2VndXJhLTI1Ng=="
+  JWT_EXPIRATION: 86400000
+  JWT_EXPIRATION_MS: 86400000
+  APP_SECURITY_ENABLED: "true"
+  EUREKA_URL: http://eureka-server:8761/eureka/
+  EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+  SPRING_JPA_HIBERNATE_DDL_AUTO: update
+  SPRING_JPA_SHOW_SQL: "false"
+  SPRING_PROFILES_ACTIVE: docker
+  SERVER_TOMCAT_THREADS_MAX: 30
+  SERVER_TOMCAT_THREADS_MIN_SPARE: 2
+  WEBCLIENT_TIMEOUT_SECONDS: 5
+  RESTCLIENT_TIMEOUT_SECONDS: 5
+  JAVA_TOOL_OPTIONS: "-Xms96m -Xmx256m -XX:+UseSerialGC -Djava.security.egd=file:/dev/./urandom"
+
+services:
+  mysql-foodfast:
+    image: mysql:8.0
+    container_name: foodfast-mysql
+    restart: unless-stopped
+    command: >
+      --performance-schema=OFF
+      --innodb-buffer-pool-size=128M
+      --max-connections=60
+      --table-open-cache=200
+      --skip-log-bin
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      TZ: America/Santiago
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_foodfast_lite_data:/var/lib/mysql
+      - ./docker/mysql/init:/docker-entrypoint-initdb.d:ro
+    networks:
+      - foodfast-net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  eureka-server:
+    build:
+      context: ./eureka-server
+    container_name: foodfast-eureka-server
+    restart: unless-stopped
+    ports:
+      - "8761:8761"
+    environment:
+      TZ: America/Santiago
+      SPRING_APPLICATION_NAME: eureka-server
+      SERVER_PORT: 8761
+      PORT: 8761
+      SPRING_PROFILES_ACTIVE: docker
+      JAVA_TOOL_OPTIONS: "-Xms96m -Xmx192m -XX:+UseSerialGC -Djava.security.egd=file:/dev/./urandom"
+    networks:
+      - foodfast-net
+
+  api-gateway:
+    build:
+      context: ./api-gateway
+    container_name: foodfast-api-gateway
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      TZ: America/Santiago
+      SPRING_PROFILES_ACTIVE: docker
+      EUREKA_URL: http://eureka-server:8761/eureka/
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+      JAVA_TOOL_OPTIONS: "-Xms96m -Xmx192m -XX:+UseSerialGC -Djava.security.egd=file:/dev/./urandom"
+      SPRING_APPLICATION_JSON: >
+        {
+          "server": { "port": 8080 },
+          "spring": {
+            "application": { "name": "api-gateway" },
+            "cloud": {
+              "gateway": {
+                "routes": [
+                  { "id": "authentication-servicio", "uri": "lb://authentication-servicio", "predicates": [ "Path=/api/auth/**,/api/autenticacion/**" ] },
+                  { "id": "catalogo-servicio", "uri": "lb://catalogo-servicio", "predicates": [ "Path=/api/productos/**,/api/catalogo/**,/api/categorias/**,/api/categoria/**" ] },
+                  { "id": "cliente-servicio", "uri": "lb://cliente-servicio", "predicates": [ "Path=/api/clientes/**,/api/cliente/**" ] },
+                  { "id": "inventario-servicio", "uri": "lb://inventario-servicio", "predicates": [ "Path=/api/inventarios/**,/api/inventario/**,/api/stock/**" ] },
+                  { "id": "notificacion-servicio", "uri": "lb://notificacion-servicio", "predicates": [ "Path=/api/notificaciones/**,/api/notificacion/**,/api/notifications/**,/api/notification/**" ] },
+                  { "id": "pago-servicio", "uri": "lb://pago-servicio", "predicates": [ "Path=/api/pagos/**,/api/pago/**" ] },
+                  { "id": "pedido-servicio", "uri": "lb://pedido-servicio", "predicates": [ "Path=/api/pedidos/**,/api/pedido/**,/api/v1/pedidos/**,/api/v1/pedido/**" ] },
+                  { "id": "reparto-servicio", "uri": "lb://reparto-servicio", "predicates": [ "Path=/api/repartos/**,/api/reparto/**,/api/entregas/**,/api/entrega/**,/api/repartidores/**,/api/repartidor/**" ] },
+                  { "id": "resena-servicio", "uri": "lb://resena-servicio", "predicates": [ "Path=/api/resenas/**,/api/resena/**" ] },
+                  { "id": "restaurante-servicio", "uri": "lb://restaurante-servicio", "predicates": [ "Path=/api/restaurantes/**,/api/restaurante/**,/api/horarios-restaurante/**,/api/horario-restaurante/**" ] }
+                ]
+              }
+            }
+          },
+          "eureka": {
+            "client": { "service-url": { "defaultZone": "http://eureka-server:8761/eureka/" } },
+            "instance": { "prefer-ip-address": true }
+          },
+          "management": { "endpoints": { "web": { "exposure": { "include": "health,info,gateway" } } } }
+        }
+    depends_on:
+      eureka-server:
+        condition: service_started
+    networks:
+      - foodfast-net
+
+  authentication-servicio:
+    build:
+      context: ./authentication-servicio/authentication-servicio
+    container_name: foodfast-authentication-servicio
+    restart: unless-stopped
+    ports:
+      - "8090:8090"
+    environment:
+      <<: *common-java-env
+      SPRING_APPLICATION_NAME: authentication-servicio
+      SERVER_PORT: 8090
+      PORT: 8090
+      SPRING_DATASOURCE_URL: "jdbc:mysql://mysql-foodfast:3306/authentication_db?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC"
+      SPRING_DATASOURCE_USERNAME: appuser
+      SPRING_DATASOURCE_PASSWORD: 1234
+      DB_HOST: mysql-foodfast
+      DB_PORT: 3306
+      DB_NAME: authentication_db
+      DB_USER: appuser
+      DB_PASSWORD: 1234
+    depends_on:
+      eureka-server:
+        condition: service_started
+      mysql-foodfast:
+        condition: service_healthy
+    networks:
+      - foodfast-net
+
+  catalogo-servicio:
+    build:
+      context: ./catalogo-servicio/catalogo-servicio
+    container_name: foodfast-catalogo-servicio
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    environment:
+      <<: *common-java-env
+      SPRING_APPLICATION_NAME: catalogo-servicio
+      SERVER_PORT: 8081
+      PORT: 8081
+      SPRING_DATASOURCE_URL: "jdbc:mysql://mysql-foodfast:3306/catalogo_db?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC"
+      SPRING_DATASOURCE_USERNAME: appuser
+      SPRING_DATASOURCE_PASSWORD: 1234
+      DB_HOST: mysql-foodfast
+      DB_PORT: 3306
+      DB_NAME: catalogo_db
+      DB_USER: appuser
+      DB_PASSWORD: 1234
+      INVENTARIO_SERVICE_URL: http://inventario-servicio:8082
+      INVENTARIO_INTEGRATION_ENABLED: "false"
+    depends_on:
+      eureka-server:
+        condition: service_started
+      mysql-foodfast:
+        condition: service_healthy
+    networks:
+      - foodfast-net
+
+  cliente-servicio:
+    build:
+      context: ./cliente-servicio/cliente-servicio
+    container_name: foodfast-cliente-servicio
+    restart: unless-stopped
+    ports:
+      - "8085:8085"
+    environment:
+      <<: *common-java-env
+      SPRING_APPLICATION_NAME: cliente-servicio
+      SERVER_PORT: 8085
+      PORT: 8085
+      SPRING_DATASOURCE_URL: "jdbc:mysql://mysql-foodfast:3306/cliente_db?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC"
+      SPRING_DATASOURCE_USERNAME: appuser
+      SPRING_DATASOURCE_PASSWORD: 1234
+      DB_HOST: mysql-foodfast
+      DB_PORT: 3306
+      DB_NAME: cliente_db
+      DB_USER: appuser
+      DB_PASSWORD: 1234
+      PEDIDO_SERVICE_URL: http://pedido-servicio:8083
+      PEDIDO_INTEGRATION_ENABLED: "false"
+    depends_on:
+      eureka-server:
+        condition: service_started
+      mysql-foodfast:
+        condition: service_healthy
+    networks:
+      - foodfast-net
+
+  inventario-servicio:
+    build:
+      context: ./inventario-servicio/inventario-servicio
+    container_name: foodfast-inventario-servicio
+    restart: unless-stopped
+    ports:
+      - "8082:8082"
+    environment:
+      <<: *common-java-env
+      SPRING_APPLICATION_NAME: inventario-servicio
+      SERVER_PORT: 8082
+      PORT: 8082
+      SPRING_DATASOURCE_URL: "jdbc:mysql://mysql-foodfast:3306/inventario_db?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC"
+      SPRING_DATASOURCE_USERNAME: appuser
+      SPRING_DATASOURCE_PASSWORD: 1234
+      DB_HOST: mysql-foodfast
+      DB_PORT: 3306
+      DB_NAME: inventario_db
+      DB_USER: appuser
+      DB_PASSWORD: 1234
+    depends_on:
+      eureka-server:
+        condition: service_started
+      mysql-foodfast:
+        condition: service_healthy
+    networks:
+      - foodfast-net
+
+  notificacion-servicio:
+    build:
+      context: ./notificacion-servicio/notificacion-servicio
+    container_name: foodfast-notificacion-servicio
+    restart: unless-stopped
+    ports:
+      - "8089:8089"
+    environment:
+      <<: *common-java-env
+      SPRING_APPLICATION_NAME: notificacion-servicio
+      SERVER_PORT: 8089
+      PORT: 8089
+      SPRING_DATASOURCE_URL: "jdbc:mysql://mysql-foodfast:3306/notificacion_db?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC"
+      SPRING_DATASOURCE_USERNAME: appuser
+      SPRING_DATASOURCE_PASSWORD: 1234
+      DB_HOST: mysql-foodfast
+      DB_PORT: 3306
+      DB_NAME: notificacion_db
+      DB_USER: appuser
+      DB_PASSWORD: 1234
+      PEDIDO_SERVICE_URL: http://pedido-servicio:8083
+      PEDIDO_INTEGRATION_ENABLED: "false"
+    depends_on:
+      eureka-server:
+        condition: service_started
+      mysql-foodfast:
+        condition: service_healthy
+    networks:
+      - foodfast-net
+
+  pago-servicio:
+    build:
+      context: ./pago-servicio/pago-servicio
+    container_name: foodfast-pago-servicio
+    restart: unless-stopped
+    ports:
+      - "8086:8086"
+    environment:
+      <<: *common-java-env
+      SPRING_APPLICATION_NAME: pago-servicio
+      SERVER_PORT: 8086
+      PORT: 8086
+      SPRING_DATASOURCE_URL: "jdbc:mysql://mysql-foodfast:3306/pago_db?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC"
+      SPRING_DATASOURCE_USERNAME: appuser
+      SPRING_DATASOURCE_PASSWORD: 1234
+      DB_HOST: mysql-foodfast
+      DB_PORT: 3306
+      DB_NAME: pago_db
+      DB_USER: appuser
+      DB_PASSWORD: 1234
+      PEDIDO_SERVICE_URL: http://pedido-servicio:8083
+      PEDIDO_INTEGRATION_ENABLED: "false"
+    depends_on:
+      eureka-server:
+        condition: service_started
+      mysql-foodfast:
+        condition: service_healthy
+    networks:
+      - foodfast-net
+
+  pedido-servicio:
+    build:
+      context: ./pedido-servicio/pedido-servicio
+    container_name: foodfast-pedido-servicio
+    restart: unless-stopped
+    ports:
+      - "8083:8083"
+    environment:
+      <<: *common-java-env
+      SPRING_APPLICATION_NAME: pedido-servicio
+      SERVER_PORT: 8083
+      PORT: 8083
+      SPRING_DATASOURCE_URL: "jdbc:mysql://mysql-foodfast:3306/pedido_db?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC"
+      SPRING_DATASOURCE_USERNAME: appuser
+      SPRING_DATASOURCE_PASSWORD: 1234
+      DB_HOST: mysql-foodfast
+      DB_PORT: 3306
+      DB_NAME: pedido_db
+      DB_USER: appuser
+      DB_PASSWORD: 1234
+      INVENTARIO_SERVICE_URL: http://inventario-servicio:8082
+      CATALOGO_SERVICE_URL: http://catalogo-servicio:8081
+      PAGO_SERVICE_URL: http://pago-servicio:8086
+    depends_on:
+      eureka-server:
+        condition: service_started
+      mysql-foodfast:
+        condition: service_healthy
+    networks:
+      - foodfast-net
+
+  reparto-servicio:
+    build:
+      context: ./reparto-servicio/reparto-servicio
+    container_name: foodfast-reparto-servicio
+    restart: unless-stopped
+    ports:
+      - "8084:8084"
+    environment:
+      <<: *common-java-env
+      SPRING_APPLICATION_NAME: reparto-servicio
+      SERVER_PORT: 8084
+      PORT: 8084
+      SPRING_DATASOURCE_URL: "jdbc:mysql://mysql-foodfast:3306/reparto_db?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC"
+      SPRING_DATASOURCE_USERNAME: appuser
+      SPRING_DATASOURCE_PASSWORD: 1234
+      DB_HOST: mysql-foodfast
+      DB_PORT: 3306
+      DB_NAME: reparto_db
+      DB_USER: appuser
+      DB_PASSWORD: 1234
+      PEDIDO_SERVICE_URL: http://pedido-servicio:8083
+      PEDIDO_INTEGRATION_ENABLED: "false"
+    depends_on:
+      eureka-server:
+        condition: service_started
+      mysql-foodfast:
+        condition: service_healthy
+    networks:
+      - foodfast-net
+
+  resena-servicio:
+    build:
+      context: ./resena-servicio/resena-servicio
+    container_name: foodfast-resena-servicio
+    restart: unless-stopped
+    ports:
+      - "8088:8088"
+    environment:
+      <<: *common-java-env
+      SPRING_APPLICATION_NAME: resena-servicio
+      SERVER_PORT: 8088
+      PORT: 8088
+      SPRING_DATASOURCE_URL: "jdbc:mysql://mysql-foodfast:3306/resena_db?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC"
+      SPRING_DATASOURCE_USERNAME: appuser
+      SPRING_DATASOURCE_PASSWORD: 1234
+      DB_HOST: mysql-foodfast
+      DB_PORT: 3306
+      DB_NAME: resena_db
+      DB_USER: appuser
+      DB_PASSWORD: 1234
+      CATALOGO_SERVICE_URL: http://catalogo-servicio:8081
+      PEDIDO_SERVICE_URL: http://pedido-servicio:8083
+      RESTAURANTE_SERVICE_URL: http://restaurante-servicio:8087
+      CATALOGO_INTEGRATION_ENABLED: "false"
+    depends_on:
+      eureka-server:
+        condition: service_started
+      mysql-foodfast:
+        condition: service_healthy
+    networks:
+      - foodfast-net
+
+  restaurante-servicio:
+    build:
+      context: ./restaurante-servicio/restaurante-servicio
+    container_name: foodfast-restaurante-servicio
+    restart: unless-stopped
+    ports:
+      - "8087:8087"
+    environment:
+      <<: *common-java-env
+      SPRING_APPLICATION_NAME: restaurante-servicio
+      SERVER_PORT: 8087
+      PORT: 8087
+      SPRING_DATASOURCE_URL: "jdbc:mysql://mysql-foodfast:3306/restaurante_db?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC"
+      SPRING_DATASOURCE_USERNAME: appuser
+      SPRING_DATASOURCE_PASSWORD: 1234
+      DB_HOST: mysql-foodfast
+      DB_PORT: 3306
+      DB_NAME: restaurante_db
+      DB_USER: appuser
+      DB_PASSWORD: 1234
+      NOTIFICACION_SERVICE_URL: http://notificacion-servicio:8089
+      NOTIFICACION_INTEGRATION_ENABLED: "false"
+    depends_on:
+      eureka-server:
+        condition: service_started
+      mysql-foodfast:
+        condition: service_healthy
+    networks:
+      - foodfast-net
+
+networks:
+  foodfast-net:
+    name: foodfast-net
+    driver: bridge
+
+volumes:
+  mysql_foodfast_lite_data:
