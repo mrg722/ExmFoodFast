@@ -1,0 +1,15 @@
+﻿services:
+  authentication-servicio:
+    build: .
+    container_name: authentication-servicio
+    ports:
+      - "8090:8090"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      DB_HOST: mysql-foodfast
+      DB_PORT: 3306
+      DB_NAME: autenticacion_db
+      DB_USER: root
+      DB_PASSWORD: root
+      EUREKA_URL: http://eureka-server:8761/eureka/
+      JWT_SECRET: FoodFastClaveJWTUltraSegura2026ParaMicroserviciosConMasDe42Caracteres

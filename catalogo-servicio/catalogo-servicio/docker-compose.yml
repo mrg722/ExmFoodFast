@@ -1,0 +1,14 @@
+﻿services:
+  catalogo-servicio:
+    build: .
+    container_name: catalogo-servicio
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      DB_HOST: mysql-foodfast
+      DB_PORT: 3306
+      DB_NAME: catalogo_db
+      DB_USER: root
+      DB_PASSWORD: root
+      EUREKA_URL: http://eureka-server:8761/eureka/
