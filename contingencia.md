@@ -12,8 +12,19 @@ Archivo para dejar en la raíz del proyecto FoodFast.
 - Docker Desktop producto: https://www.docker.com/products/docker-desktop/
 
 ---
+Si Maven muestra 25, fuerza Java 21 en esa ventana:
 
-## 2. Verificar entorno del PC del profesor
+$jdk21 = Get-ChildItem "C:\Program Files\Eclipse Adoptium" -Directory |
+    Where-Object { $_.Name -like "jdk-21*" } |
+    Select-Object -First 1
+
+$env:JAVA_HOME = $jdk21.FullName
+$env:Path = "$env:JAVA_HOME\bin;$env:Path"
+
+java -version
+.\mvnw.cmd -v
+
+## 2. Verificar entorno del PC 
 
 ```powershell
 java -version
